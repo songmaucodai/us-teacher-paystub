@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pay Stub Example - Wayne Hills High School</title>
+  <style>
+    /* --- GIỮ NGUYÊN CSS GỐC CỦA BẠN --- */
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Calibri", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background: #e5e5e5;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { font-size: 20px; margin-bottom: 16px; text-align: center; }
+    .layout { display: flex; gap: 16px; align-items: flex-start; max-width: 1100px; margin: 0 auto; }
+    .panel { background: #ffffff; border-radius: 6px; padding: 14px 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.1); }
+    .panel.editor { width: 300px; flex-shrink: 0; }
+    .panel.stub { flex: 1; min-width: 0; padding: 12px 16px; }
+    .editor h2 { font-size: 15px; margin: 10px 0 8px; }
+    .editor h3 { font-size: 14px; margin: 0 0 6px; }
+    .field-group { margin-bottom: 8px; }
+    .field-group label { display: block; font-size: 12px; margin-bottom: 3px; color: #555; }
+    .field-group input { width: 100%; padding: 5px 7px; font-size: 12px; border-radius: 3px; border: 1px solid #bbb; }
+    .hint { font-size: 11px; color: #888; margin-top: 4px; }
+    .quick-panel { border-bottom: 1px dashed #ccc; padding-bottom: 8px; margin-bottom: 6px; }
+    .quick-panel button { padding: 5px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #333; background: #f5f5f5; cursor: pointer; }
+    .quick-panel button:hover { background: #e6e6e6; }
+
+    /* Pay stub styles */
+    .page { border: 1px solid #000; padding: 8px 10px; background: #fff; width: 100%; }
+    .pay-stub { font-size: 10px; color: #111; }
+    .stub-top-title { text-align: center; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; }
+    .stub-top-subtitle { text-align: center; font-weight: 700; font-size: 11px; margin-top: 2px; }
+    .stub-top-district { text-align: center; font-size: 10px; margin-top: 2px; line-height: 1.35; }
+    .stub-top-district .district-line-main { font-weight: 700; font-size: 11px; }
+    .stub-header-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 6px; }
+    .stub-header-left { font-size: 10px; }
+    .stub-header-left div { line-height: 1.4; }
+    .stub-header-right { min-width: 220px; }
+    .stub-header-right table { border-collapse: collapse; width: 100%; font-size: 10px; }
+    .stub-header-right th, .stub-header-right td { border: 1px solid #000; padding: 2px 3px; text-align: left; white-space: nowrap; }
+    .stub-header-right th { font-weight: 700; }
+    .section-row { display: grid; grid-template-columns: 1.3fr 1.1fr; gap: 8px; margin-top: 6px; }
+    table.stub-table { width: 100%; border-collapse: collapse; margin-bottom: 3px; }
+    table.stub-table th, table.stub-table td { border: 1px solid #000; padding: 2px 3px; text-align: left; vertical-align: top; }
+    table.stub-table th { background: #f6f6f6; font-weight: 700; }
+    .stub-section-title { font-weight: 700; margin: 5px 0 2px; text-transform: uppercase; font-size: 9px; }
+    .bottom-row { display: grid; grid-template-columns: 1.1fr 1.4fr; gap: 8px; margin-top: 6px; }
+    .summary-box table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .summary-box th, .summary-box td { border: 1px solid #000; padding: 2px 3px; text-align: left; }
+    .check-area { border: 1px solid #000; padding: 5px; font-size: 10px; }
+    .check-row { display: flex; justify-content: space-between; gap: 10px; margin: 4px 0; align-items: center; }
+    .amount-box { border: 1px solid #000; padding: 3px 5px; min-width: 110px; text-align: right; font-weight: 700; }
+    .small { font-size: 9px; line-height: 1.3; }
+    .district-address { margin-top: 6px; font-size: 9px; border-top: 1px dashed #000; padding-top: 4px; }
+    .district-address strong { font-weight: 700; }
+    .right { text-align: right; }
+  </style>
+</head>
+<body>
+  <h1>Pay Stub Example (Wayne Hills High School)</h1>
+  <div class="layout">
+    <div class="panel editor">
+      <div class="quick-panel">
+        <h3>Quick Random Generation</h3>
+        <button id="btn-random">Random Generate (Smart Logic)</button>
+        <p class="hint">
+          Randomizes Employee ID, Dates, Advice # AND calculates realistic Taxes, Pension, and Net Pay based on US teacher salary ranges.
+        </p>
+      </div>
+
+      <h2>Advanced Modification</h2>
+
+      <div class="field-group">
+        <label for="input-employeeName">Name</label>
+        <input id="input-employeeName" type="text" value="Employee Name" data-bind="employeeName" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-employeeId">Employee ID / Last Digits</label>
+        <input id="input-employeeId" type="text" value="XXX-XX-9999" data-bind="employeeId" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-schoolName">School Name</label>
+        <input id="input-schoolName" type="text" value="WAYNE HILLS HIGH SCHOOL" data-bind="schoolName" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-districtName">District Name</label>
+        <input id="input-districtName" type="text" value="WAYNE TOWNSHIP PUBLIC SCHOOLS" data-bind="districtName" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-districtAddress1">School Address (Line 1)</label>
+        <input id="input-districtAddress1" type="text" value="272 BERDAN AVENUE" data-bind="districtAddress1" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-districtAddress2">School Address (Line 2)</label>
+        <input id="input-districtAddress2" type="text" value="WAYNE, NJ 07470" data-bind="districtAddress2" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-payLocation">Pay Location</label>
+        <input id="input-payLocation" type="text" value="050" data-bind="payLocation" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-payCycle">Pay Cycle</label>
+        <input id="input-payCycle" type="text" value="C1B" data-bind="payCycle" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-issueDate">Issue Date</label>
+        <input id="input-issueDate" type="text" value="12/01/2025" data-bind="issueDate" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-endDate">End Date</label>
+        <input id="input-endDate" type="text" value="11/30/2025" data-bind="endDate" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-adviceNumber">Advice Number</label>
+        <input id="input-adviceNumber" type="text" value="1234567" data-bind="adviceNumber" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-netPay">Net Pay</label>
+        <input id="input-netPay" type="text" value="5,719.62" data-bind="netPay" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-amountWords">Amount in Words</label>
+        <input id="input-amountWords" type="text"
+          value="FIVE THOUSAND SEVEN HUNDRED NINETEEN AND 62/100 Dollars"
+          data-bind="amountWords" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-employeeAddress">Employee Address</label>
+        <input id="input-employeeAddress" type="text" value="Employee Address" data-bind="employeeAddress" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-employeeCityState">Employee City, State, Zip</label>
+        <input id="input-employeeCityState" type="text" value="Employee City, State and Zip Code" data-bind="employeeCityState" />
+      </div>
+
+      <div class="field-group">
+        <label for="input-accrualDate">Accrual Date</label>
+        <input id="input-accrualDate" type="text" value="12/01/2025" data-bind="accrualDate" />
+      </div>
+      
+      <p class="hint">Hint: Advanced Modification updates text directly. "Random Generate" calculates logical financial data.</p>
+    </div>
+
+    <div class="panel stub">
+      <div class="page">
+        <div class="pay-stub">
+          <div class="stub-top-title">SALARY WARRANT</div>
+          <div class="stub-top-subtitle">CERTIFICATED</div>
+          <div class="stub-top-district">
+            <div>PASSAIC COUNTY, NEW JERSEY</div>
+            <div class="district-line-main"><span data-field="districtName">WAYNE TOWNSHIP PUBLIC SCHOOLS</span></div>
+            <div class="district-line-main"><span data-field="schoolName">WAYNE HILLS HIGH SCHOOL</span></div>
+          </div>
+
+          <div class="stub-header-row">
+            <div class="stub-header-left">
+              <div><strong>EMPLOYEE:</strong> <span data-field="employeeName">Employee Name</span></div>
+              <div><strong>ID:</strong> <span data-field="employeeId">XXX-XX-9999</span></div>
+            </div>
+            <div class="stub-header-right">
+              <table>
+                <tr><th>PAY LOCATION</th><td><span data-field="payLocation">050</span></td></tr>
+                <tr><th>PAY CYCLE</th><td><span data-field="payCycle">C1B</span></td></tr>
+                <tr><th>ISSUE DATE</th><td><span data-field="issueDate">12/01/2025</span></td></tr>
+                <tr><th>ADVICE NUMBER</th><td><span data-field="adviceNumber">1234567</span></td></tr>
+              </table>
+            </div>
+          </div>
+
+          <div class="section-row" style="margin-top: 6px;">
+            <table class="stub-table">
+              <tr><th>EMPLOYEE NAME</th><td><span data-field="employeeName">Employee Name</span></td></tr>
+              <tr><th>EMPLOYEE ID</th><td><span data-field="employeeId">XXX-XX-9999</span></td></tr>
+            </table>
+            <table class="stub-table">
+              <tr><th>FEDERAL ALLOWANCES</th><td>M-03</td></tr>
+              <tr><th>STATE ALLOWANCES</th><td>M-03</td></tr>
+              <tr><th>ADDITIONAL STATE</th><td>0</td></tr>
+            </table>
+          </div>
+
+          <div class="section-row">
+            <div>
+              <div class="stub-section-title">EARNINGS - COMPENSATION</div>
+              <table class="stub-table">
+                <tr><th>BASIS</th><th>DESCRIPTION</th><th>END DATE</th><th>RATE</th><th>UNITS</th><th>AMOUNT</th></tr>
+                <tr>
+                  <td>C M</td><td>REGULAR</td>
+                  <td><span data-field="endDate">11/30/2025</span></td>
+                  <td id="cell-gross-rate">8,294.02</td>
+                  <td>1.00</td>
+                  <td id="cell-gross-amt">8,294.02</td>
+                </tr>
+              </table>
+
+              <div class="stub-section-title">PRE-TAX REDUCTIONS</div>
+              <table class="stub-table">
+                <tr><th>DESCRIPTION</th><th>CURRENT AMOUNT</th><th>YTD TOTALS</th></tr>
+                <tr><td>STRS RED</td><td id="cell-strs-curr">846.40</td><td id="cell-strs-ytd">10,156.80</td></tr>
+                <tr><td>VSP R</td><td id="cell-vsp-curr">14.34</td><td id="cell-vsp-ytd">172.08</td></tr>
+                <tr><td>KAI PLUS</td><td id="cell-kai-curr">145.00</td><td id="cell-kai-ytd">1,740.00</td></tr>
+              </table>
+
+              <div class="stub-section-title">EMPLOYEE DEDUCTIONS</div>
+              <table class="stub-table">
+                <tr><th>DESCRIPTION</th><th>CURRENT AMOUNT</th><th>YTD TOTALS</th></tr>
+                <tr><td>FWT</td><td id="cell-fwt-curr">945.96</td><td id="cell-fwt-ytd">11,351.52</td></tr>
+                <tr><td>SWT</td><td id="cell-swt-curr">388.25</td><td id="cell-swt-ytd">4,659.00</td></tr>
+                <tr><td>MEDCAR DED</td><td id="cell-med-curr">117.95</td><td id="cell-med-ytd">1,415.40</td></tr>
+                <tr><td>CTA</td><td id="cell-cta-curr">116.50</td><td id="cell-cta-ytd">1,398.00</td></tr>
+              </table>
+            </div>
+
+            <div>
+              <div class="stub-section-title">EMPLOYER CONTRIBUTIONS</div>
+              <table class="stub-table">
+                <tr><th>DESCRIPTION</th><th>CURRENT AMOUNT</th><th>YTD TOTALS</th></tr>
+                <tr><td>STRS CON</td><td id="cell-er-strs">1,403.35</td><td id="cell-er-strs-ytd">16,840.20</td></tr>
+                <tr><td>MEDCAR CON</td><td id="cell-er-med">117.95</td><td id="cell-er-med-ytd">1,415.40</td></tr>
+                <tr><td>SUI</td><td id="cell-er-sui">40.67</td><td id="cell-er-sui-ytd">488.04</td></tr>
+                <tr><td>WORK COMP</td><td id="cell-er-wc">185.87</td><td id="cell-er-wc-ytd">2,230.44</td></tr>
+                <tr><td>LIFE INS</td><td id="cell-er-life">8.40</td><td id="cell-er-life-ytd">100.80</td></tr>
+                <tr><td>KAISER</td><td id="cell-er-kai">805.00</td><td id="cell-er-kai-ytd">9,660.00</td></tr>
+                <tr><td>DELTA DEN</td><td id="cell-er-den">65.17</td><td id="cell-er-den-ytd">782.04</td></tr>
+              </table>
+
+              <div class="stub-section-title">CURRENT TAXABLE BALANCES</div>
+              <table class="stub-table">
+                <tr><th>TYPE</th><th>CURRENT</th><th>YTD</th></tr>
+                <tr><td>FEDERAL</td><td id="cell-tax-fed">7,288.28</td><td id="cell-tax-fed-ytd">87,459.36</td></tr>
+                <tr><td>STATE</td><td id="cell-tax-state">7,288.28</td><td id="cell-tax-state-ytd">87,459.36</td></tr>
+                <tr><td>MEDI GROSS</td><td id="cell-tax-med">8,134.68</td><td id="cell-tax-med-ytd">97,616.16</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <div class="bottom-row">
+            <div class="summary-box">
+              <table>
+                <tr><th>GROSS PAY</th><td id="cell-sum-gross">8,294.02</td></tr>
+                <tr><th>REDUCTIONS</th><td id="cell-sum-red">1,005.74</td></tr>
+                <tr><th>TAXES</th><td id="cell-sum-tax">1,452.16</td></tr>
+                <tr><th>DEDUCTIONS</th><td id="cell-sum-ded">116.50</td></tr>
+                <tr><th>GROSS EARN'S (YTD)</th><td id="cell-sum-ytd">99,528.24</td></tr>
+                <tr><th>NET PAY</th><td class="right">$<span data-field="netPay">5,719.62</span></td></tr>
+              </table>
+            </div>
+
+            <div class="check-area">
+              <div class="small">
+                <div>
+                  <span data-field="districtName">WAYNE TOWNSHIP PUBLIC SCHOOLS</span> – 
+                  <span data-field="schoolName">WAYNE HILLS HIGH SCHOOL</span><br/>
+                  NO. <span data-field="adviceNumber">1234567</span>&nbsp;&nbsp;&nbsp;
+                  Date Issued <span data-field="issueDate">12/01/2025</span>
+                </div>
+                <br />
+                <div>THE TREASURER OF PASSAIC COUNTY will pay exactly:</div>
+              </div>
+              <div class="check-row">
+                <div>AMOUNT</div>
+                <div class="amount-box">$<span data-field="netPay">5,719.62</span></div>
+              </div>
+              <div class="small">
+                <div><span data-field="amountWords">FIVE THOUSAND SEVEN HUNDRED NINETEEN AND 62/100 Dollars</span></div>
+                <br />
+                <div>NOT VALID FOR MORE THAN $24,999.99</div>
+                <br />
+                <div>
+                  LOCATION <span data-field="payLocation">050</span>&nbsp;&nbsp;&nbsp;&nbsp;WILL PAY TO:
+                  <span data-field="employeeName">Employee Name</span>
+                </div>
+                <div>ACCRUAL DATE: <span data-field="accrualDate">12/01/2025</span></div>
+                <div><span data-field="employeeAddress">Employee Address</span></div>
+                <div><span data-field="employeeCityState">Employee City, State and Zip Code</span></div>
+                <br />
+                <div>BY _________________________ &nbsp;DEPUTY</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="district-address">
+            <strong>School Address:</strong>
+            <span data-field="schoolName">WAYNE HILLS HIGH SCHOOL</span>,
+            <span data-field="districtAddress1">272 BERDAN AVENUE</span>,
+            <span data-field="districtAddress2">WAYNE, NJ 07470</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. Chức năng gốc: Binding (Giữ nguyên) ---
+    function setupBinding() {
+      const inputs = document.querySelectorAll("input[data-bind]");
+      inputs.forEach((input) => {
+        const key = input.getAttribute("data-bind");
+        const updateTargets = () => {
+          const value = input.value;
+          const targets = document.querySelectorAll('[data-field="' + key + '"]');
+          targets.forEach((el) => {
+            if (key === "netPay") {
+              if (el.closest(".amount-box")) {
+                el.textContent = value;
+              } else if (el.parentElement && el.parentElement.classList.contains("right")) {
+                el.textContent = value;
+              } else if (el.textContent.trim().startsWith("$")) {
+                el.textContent = "$" + value;
+              } else {
+                el.textContent = value;
+              }
+            } else {
+              el.textContent = value;
+            }
+          });
+        };
+        input.addEventListener("input", updateTargets);
+        // Không gọi updateTargets ngay lúc đầu để giữ số liệu mẫu nếu chưa sửa
+      });
+    }
+
+    // --- 2. Các hàm tiện ích logic (Mới) ---
+    function formatMoney(num) {
+      return num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
+    
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function formatDateMMDDYYYY(date) {
+      const m = date.getMonth() + 1;
+      const d = date.getDate();
+      const y = date.getFullYear();
+      return (m < 10 ? "0" + m : m) + "/" + (d < 10 ? "0" + d : d) + "/" + y;
+    }
+
+    function getNumberToWords(amount) {
+      const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
+      const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
+      
+      const dollars = Math.floor(amount);
+      const cents = Math.round((amount - dollars) * 100);
+
+      function convertGroup(n) {
+        let str = '';
+        if (n >= 100) { str += ones[Math.floor(n / 100)] + ' HUNDRED '; n %= 100; }
+        if (n >= 20) { str += tens[Math.floor(n / 10)] + ' '; n %= 10; }
+        if (n > 0) { str += ones[n] + ' '; }
+        return str.trim();
+      }
+
+      let w = '';
+      if (dollars >= 1000) {
+        w += convertGroup(Math.floor(dollars / 1000)) + ' THOUSAND ';
+        w += convertGroup(dollars % 1000);
+      } else {
+        w += convertGroup(dollars);
+      }
+      if(w === '') w = 'ZERO';
+
+      return w + ' AND ' + cents.toString().padStart(2,'0') + '/100 Dollars';
+    }
+
+    function triggerInputById(id, value) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = value;
+      const evt = new Event("input", { bubbles: true });
+      el.dispatchEvent(evt);
+    }
+
+    function updateCell(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = formatMoney(value);
+    }
+
+    // --- 3. Logic Tính Lương Thông Minh (Kết nối vào nút Random cũ) ---
+    function runSmartRandom() {
+        // A. Random thông tin cơ bản
+        const adviceNumber = (randomInt(1000000, 9999999)).toString();
+        const last4 = randomInt(0, 9999).toString().padStart(4, "0");
+        
+        // Date Logic
+        const now = new Date();
+        const issueDate = new Date(now.getTime() - (randomInt(1, 30) * 86400000));
+        const endDate = new Date(issueDate.getTime() - (randomInt(0, 5) * 86400000));
+        
+        // Cập nhật input gốc
+        triggerInputById("input-adviceNumber", adviceNumber);
+        triggerInputById("input-employeeId", "XXX-XX-" + last4);
+        triggerInputById("input-issueDate", formatDateMMDDYYYY(issueDate));
+        triggerInputById("input-endDate", formatDateMMDDYYYY(endDate));
+        triggerInputById("input-accrualDate", formatDateMMDDYYYY(issueDate));
+
+        // B. Tính toán tài chính (Logic mới)
+        // 1. Lương Gộp (Gross Pay) cho giáo viên: $4500 - $9000
+        const grossPay = 4500 + Math.random() * 4500;
+        
+        // 2. Các chỉ số khấu trừ (Giả lập logic NJ)
+        const rates = {
+            strs: 0.102, // 10.2% Pension
+            vsp: 14.34,  // Fixed Vision
+            kai: 145.00, // Fixed Health
+            fwt: 0.11 + (Math.random() * 0.04), // Federal Tax ~11-15%
+            swt: 0.04 + (Math.random() * 0.01), // State Tax ~4-5%
+            med: 0.0145, // Medicare 1.45%
+            cta: 116.50  // Union Dues
+        };
+
+        const strs = grossPay * rates.strs;
+        const fwt = grossPay * rates.fwt;
+        const swt = grossPay * rates.swt;
+        const med = grossPay * rates.med;
+        
+        // Tổng các khoản
+        const totalReductions = strs + rates.vsp + rates.kai; // Pre-tax
+        const totalDeductions = fwt + swt + med + rates.cta; // Taxes + After-tax
+        const netPay = grossPay - totalReductions - totalDeductions;
+        const taxable = grossPay - totalReductions;
+
+        // Giả lập YTD (Nhân 12 tháng)
+        const m = 12; 
+
+        // C. Cập nhật Bảng (Update Table Cells)
+        // Earnings
+        updateCell("cell-gross-rate", grossPay);
+        updateCell("cell-gross-amt", grossPay);
+        
+        // Pre-tax Reductions
+        updateCell("cell-strs-curr", strs); updateCell("cell-strs-ytd", strs * m);
+        updateCell("cell-vsp-curr", rates.vsp); updateCell("cell-vsp-ytd", rates.vsp * m);
+        updateCell("cell-kai-curr", rates.kai); updateCell("cell-kai-ytd", rates.kai * m);
+        
+        // Employee Deductions
+        updateCell("cell-fwt-curr", fwt); updateCell("cell-fwt-ytd", fwt * m);
+        updateCell("cell-swt-curr", swt); updateCell("cell-swt-ytd", swt * m);
+        updateCell("cell-med-curr", med); updateCell("cell-med-ytd", med * m);
+        updateCell("cell-cta-curr", rates.cta); updateCell("cell-cta-ytd", rates.cta * m);
+
+        // Employer Contributions (Giả lập)
+        const erStrs = grossPay * 0.16; // Employer pays more
+        const erSui = grossPay * 0.005;
+        const erWc = grossPay * 0.022;
+        updateCell("cell-er-strs", erStrs); updateCell("cell-er-strs-ytd", erStrs * m);
+        updateCell("cell-er-med", med); updateCell("cell-er-med-ytd", med * m);
+        updateCell("cell-er-sui", erSui); updateCell("cell-er-sui-ytd", erSui * m);
+        updateCell("cell-er-wc", erWc); updateCell("cell-er-wc-ytd", erWc * m);
+        // Giữ nguyên mấy cái fix
+        updateCell("cell-er-life", 8.40); updateCell("cell-er-life-ytd", 100.80);
+        updateCell("cell-er-kai", 805.00); updateCell("cell-er-kai-ytd", 9660.00);
+        updateCell("cell-er-den", 65.17); updateCell("cell-er-den-ytd", 782.04);
+
+        // Taxable Balances
+        updateCell("cell-tax-fed", taxable); updateCell("cell-tax-fed-ytd", taxable * m);
+        updateCell("cell-tax-state", taxable); updateCell("cell-tax-state-ytd", taxable * m);
+        updateCell("cell-tax-med", grossPay); updateCell("cell-tax-med-ytd", grossPay * m);
+
+        // Summary Box
+        updateCell("cell-sum-gross", grossPay);
+        updateCell("cell-sum-red", totalReductions);
+        updateCell("cell-sum-tax", fwt + swt + med); // Tax section in summary usually groups strict taxes
+        updateCell("cell-sum-ded", rates.cta); // Remaining deductions
+        updateCell("cell-sum-ytd", grossPay * m);
+        
+        // D. Cập nhật Input Net Pay & Chữ (Quan trọng nhất)
+        triggerInputById("input-netPay", formatMoney(netPay));
+        triggerInputById("input-amountWords", getNumberToWords(netPay));
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setupBinding();
+      
+      const btn = document.getElementById("btn-random");
+      if(btn) {
+        btn.addEventListener("click", runSmartRandom);
+      }
+    });
+  </script>
+</body>
+</html>
