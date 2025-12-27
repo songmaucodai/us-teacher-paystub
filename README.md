@@ -10,7 +10,7 @@ A Single Page Application (SPA) designed to simulate realistic pay stubs for US 
 ## Demo
 
 ![App Screenshot](demo.png)
-*Screenshot of the generator interface with a sample paycheck.*
+*Screenshot of a sample payslip.*
 
 ## Key Features
 
