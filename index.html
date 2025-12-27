@@ -26,13 +26,8 @@
     .hint { font-size: 11px; color: #888; margin-top: 4px; }
     
     .quick-panel { border-bottom: 1px dashed #ccc; padding-bottom: 8px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 6px; }
-    /* Style cho các nút bấm */
-    .btn {
-      padding: 8px 10px; font-size: 12px; border-radius: 4px; border: 1px solid transparent; 
-      cursor: pointer; width: 100%; font-weight: bold; transition: opacity 0.2s;
-    }
+    .btn { padding: 8px 10px; font-size: 12px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; width: 100%; font-weight: bold; transition: opacity 0.2s; }
     .btn:hover { opacity: 0.9; }
-    
     #btn-random { background: #007bff; color: white; border-color: #0056b3; }
     #btn-download { background: #28a745; color: white; border-color: #1e7e34; }
 
@@ -73,8 +68,11 @@
     <div class="panel editor">
       <div class="quick-panel">
         <h3>Actions</h3>
-        <button id="btn-random" class="btn">Random Generate (Smart Logic)</button>
+        <button id="btn-random" class="btn">Generate Current Paycheck</button>
         <button id="btn-download" class="btn">📸 Download Image (.png)</button>
+        <p class="hint">
+          <strong>Smart Logic:</strong> Detects CURRENT real-world month. Sets payday to End-of-Month. Calculates YTD based on exactly how many months have passed this year.
+        </p>
       </div>
 
       <h2>Advanced Modification</h2>
@@ -121,12 +119,12 @@
 
       <div class="field-group">
         <label for="input-issueDate">Issue Date</label>
-        <input id="input-issueDate" type="text" value="12/01/2025" data-bind="issueDate" />
+        <input id="input-issueDate" type="text" value="12/31/2025" data-bind="issueDate" />
       </div>
 
       <div class="field-group">
         <label for="input-endDate">End Date</label>
-        <input id="input-endDate" type="text" value="11/30/2025" data-bind="endDate" />
+        <input id="input-endDate" type="text" value="12/31/2025" data-bind="endDate" />
       </div>
 
       <div class="field-group">
@@ -158,7 +156,7 @@
 
       <div class="field-group">
         <label for="input-accrualDate">Accrual Date</label>
-        <input id="input-accrualDate" type="text" value="12/01/2025" data-bind="accrualDate" />
+        <input id="input-accrualDate" type="text" value="12/31/2025" data-bind="accrualDate" />
       </div>
     </div>
 
@@ -182,7 +180,7 @@
               <table>
                 <tr><th>PAY LOCATION</th><td><span data-field="payLocation">050</span></td></tr>
                 <tr><th>PAY CYCLE</th><td><span data-field="payCycle">C1B</span></td></tr>
-                <tr><th>ISSUE DATE</th><td><span data-field="issueDate">12/01/2025</span></td></tr>
+                <tr><th>ISSUE DATE</th><td><span data-field="issueDate">12/31/2025</span></td></tr>
                 <tr><th>ADVICE NUMBER</th><td><span data-field="adviceNumber">1234567</span></td></tr>
               </table>
             </div>
@@ -207,7 +205,7 @@
                 <tr><th>BASIS</th><th>DESCRIPTION</th><th>END DATE</th><th>RATE</th><th>UNITS</th><th>AMOUNT</th></tr>
                 <tr>
                   <td>C M</td><td>REGULAR</td>
-                  <td><span data-field="endDate">11/30/2025</span></td>
+                  <td><span data-field="endDate">12/31/2025</span></td>
                   <td id="cell-gross-rate">8,294.02</td>
                   <td>1.00</td>
                   <td id="cell-gross-amt">8,294.02</td>
@@ -273,7 +271,7 @@
                   <span data-field="districtName">WAYNE TOWNSHIP PUBLIC SCHOOLS</span> – 
                   <span data-field="schoolName">WAYNE HILLS HIGH SCHOOL</span><br/>
                   NO. <span data-field="adviceNumber">1234567</span>&nbsp;&nbsp;&nbsp;
-                  Date Issued <span data-field="issueDate">12/01/2025</span>
+                  Date Issued <span data-field="issueDate">12/31/2025</span>
                 </div>
                 <br />
                 <div>THE TREASURER OF PASSAIC COUNTY will pay exactly:</div>
@@ -291,7 +289,7 @@
                   LOCATION <span data-field="payLocation">050</span>&nbsp;&nbsp;&nbsp;&nbsp;WILL PAY TO:
                   <span data-field="employeeName">Employee Name</span>
                 </div>
-                <div>ACCRUAL DATE: <span data-field="accrualDate">12/01/2025</span></div>
+                <div>ACCRUAL DATE: <span data-field="accrualDate">12/31/2025</span></div>
                 <div><span data-field="employeeAddress">Employee Address</span></div>
                 <div><span data-field="employeeCityState">Employee City, State and Zip Code</span></div>
                 <br />
@@ -392,13 +390,22 @@
       if (el) el.textContent = formatMoney(value);
     }
 
-    // --- 3. Logic Tính Lương Thông Minh (Smart Random) ---
+    // --- 3. Logic: BÁM SÁT THỜI GIAN THỰC (Real-Time Logic) ---
     function runSmartRandom() {
         const adviceNumber = (randomInt(1000000, 9999999)).toString();
         const last4 = randomInt(0, 9999).toString().padStart(4, "0");
-        const now = new Date();
-        const issueDate = new Date(now.getTime() - (randomInt(1, 30) * 86400000));
-        const endDate = new Date(issueDate.getTime() - (randomInt(0, 5) * 86400000));
+        
+        // --- LOGIC THỜI GIAN THỰC ---
+        const now = new Date(); // Lấy ngày giờ hiện tại trên máy
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth(); // Tháng chạy từ 0 - 11
+        
+        // US Teacher Pay: Thường là ngày cuối cùng của tháng (Last working day)
+        // Tạo ngày cuối cùng của tháng HIỆN TẠI
+        const lastDayOfCurrentMonth = new Date(currentYear, currentMonth + 1, 0);
+        
+        const issueDate = lastDayOfCurrentMonth; 
+        const endDate = lastDayOfCurrentMonth; // Payroll kết thúc cùng ngày
         
         triggerInputById("input-adviceNumber", adviceNumber);
         triggerInputById("input-employeeId", "XXX-XX-" + last4);
@@ -406,6 +413,7 @@
         triggerInputById("input-endDate", formatDateMMDDYYYY(endDate));
         triggerInputById("input-accrualDate", formatDateMMDDYYYY(issueDate));
 
+        // FINANCIAL LOGIC
         const grossPay = 4500 + Math.random() * 4500;
         const rates = {
             strs: 0.102, vsp: 14.34, kai: 145.00,
@@ -421,12 +429,19 @@
         const totalDeductions = fwt + swt + med + rates.cta;
         const netPay = grossPay - totalReductions - totalDeductions;
         const taxable = grossPay - totalReductions;
-        const m = 12; 
+        
+        // --- LOGIC YTD CHUẨN THỜI GIAN THỰC ---
+        // Lấy tháng hiện tại + 1 để làm hệ số nhân
+        // Ví dụ: Tháng 3 (March) -> currentMonth=2 -> m=3.
+        const m = currentMonth + 1; 
 
         updateCell("cell-gross-rate", grossPay); updateCell("cell-gross-amt", grossPay);
+        
+        // Nhân YTD với m (tháng thực tế)
         updateCell("cell-strs-curr", strs); updateCell("cell-strs-ytd", strs * m);
         updateCell("cell-vsp-curr", rates.vsp); updateCell("cell-vsp-ytd", rates.vsp * m);
         updateCell("cell-kai-curr", rates.kai); updateCell("cell-kai-ytd", rates.kai * m);
+        
         updateCell("cell-fwt-curr", fwt); updateCell("cell-fwt-ytd", fwt * m);
         updateCell("cell-swt-curr", swt); updateCell("cell-swt-ytd", swt * m);
         updateCell("cell-med-curr", med); updateCell("cell-med-ytd", med * m);
@@ -437,9 +452,9 @@
         updateCell("cell-er-med", med); updateCell("cell-er-med-ytd", med * m);
         updateCell("cell-er-sui", erSui); updateCell("cell-er-sui-ytd", erSui * m);
         updateCell("cell-er-wc", erWc); updateCell("cell-er-wc-ytd", erWc * m);
-        updateCell("cell-er-life", 8.40); updateCell("cell-er-life-ytd", 100.80);
-        updateCell("cell-er-kai", 805.00); updateCell("cell-er-kai-ytd", 9660.00);
-        updateCell("cell-er-den", 65.17); updateCell("cell-er-den-ytd", 782.04);
+        updateCell("cell-er-life", 8.40); updateCell("cell-er-life-ytd", 8.40 * m); 
+        updateCell("cell-er-kai", 805.00); updateCell("cell-er-kai-ytd", 805.00 * m);
+        updateCell("cell-er-den", 65.17); updateCell("cell-er-den-ytd", 65.17 * m);
 
         updateCell("cell-tax-fed", taxable); updateCell("cell-tax-fed-ytd", taxable * m);
         updateCell("cell-tax-state", taxable); updateCell("cell-tax-state-ytd", taxable * m);
@@ -449,7 +464,7 @@
         updateCell("cell-sum-red", totalReductions);
         updateCell("cell-sum-tax", fwt + swt + med);
         updateCell("cell-sum-ded", rates.cta);
-        updateCell("cell-sum-ytd", grossPay * m);
+        updateCell("cell-sum-ytd", grossPay * m); 
         
         triggerInputById("input-netPay", formatMoney(netPay));
         triggerInputById("input-amountWords", getNumberToWords(netPay));
@@ -461,14 +476,12 @@
         const nameVal = document.getElementById('input-employeeName').value || 'employee';
         const dateVal = document.getElementById('input-issueDate').value || 'date';
 
-        // Xử lý tên file
         const cleanName = nameVal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
         const cleanDate = dateVal.replace(/\//g, '-');
         const filename = `${cleanName}-${cleanDate}.png`;
 
-        // Dùng html2canvas chụp với scale cao
         html2canvas(captureElement, {
-            scale: 4, // Tăng lên 4 để ảnh sắc nét (High Resolution)
+            scale: 4, 
             useCORS: true,
             backgroundColor: "#ffffff"
         }).then(canvas => {
@@ -486,6 +499,9 @@
 
       const btnDown = document.getElementById("btn-download");
       if(btnDown) btnDown.addEventListener("click", downloadImage);
+      
+      // Auto-run once to set today's date logic immediately on load
+      runSmartRandom();
     });
   </script>
 </body>
