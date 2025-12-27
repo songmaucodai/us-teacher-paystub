@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Pay Stub Example - Wayne Hills High School</title>
+  <title>Pay Stub Generator - Wayne Hills High School</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    /* --- GIỮ NGUYÊN CSS GỐC CỦA BẠN --- */
+    /* --- GIỮ NGUYÊN CSS GỐC --- */
     * { box-sizing: border-box; }
     body {
       font-family: "Calibri", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
@@ -23,9 +24,17 @@
     .field-group label { display: block; font-size: 12px; margin-bottom: 3px; color: #555; }
     .field-group input { width: 100%; padding: 5px 7px; font-size: 12px; border-radius: 3px; border: 1px solid #bbb; }
     .hint { font-size: 11px; color: #888; margin-top: 4px; }
-    .quick-panel { border-bottom: 1px dashed #ccc; padding-bottom: 8px; margin-bottom: 6px; }
-    .quick-panel button { padding: 5px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #333; background: #f5f5f5; cursor: pointer; }
-    .quick-panel button:hover { background: #e6e6e6; }
+    
+    .quick-panel { border-bottom: 1px dashed #ccc; padding-bottom: 8px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 6px; }
+    /* Style cho các nút bấm */
+    .btn {
+      padding: 8px 10px; font-size: 12px; border-radius: 4px; border: 1px solid transparent; 
+      cursor: pointer; width: 100%; font-weight: bold; transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    
+    #btn-random { background: #007bff; color: white; border-color: #0056b3; }
+    #btn-download { background: #28a745; color: white; border-color: #1e7e34; }
 
     /* Pay stub styles */
     .page { border: 1px solid #000; padding: 8px 10px; background: #fff; width: 100%; }
@@ -59,15 +68,13 @@
   </style>
 </head>
 <body>
-  <h1>Pay Stub Example (Wayne Hills High School)</h1>
+  <h1>Pay Stub Generator (Wayne Hills High School)</h1>
   <div class="layout">
     <div class="panel editor">
       <div class="quick-panel">
-        <h3>Quick Random Generation</h3>
-        <button id="btn-random">Random Generate (Smart Logic)</button>
-        <p class="hint">
-          Randomizes Employee ID, Dates, Advice # AND calculates realistic Taxes, Pension, and Net Pay based on US teacher salary ranges.
-        </p>
+        <h3>Actions</h3>
+        <button id="btn-random" class="btn">Random Generate (Smart Logic)</button>
+        <button id="btn-download" class="btn">📸 Download Image (.png)</button>
       </div>
 
       <h2>Advanced Modification</h2>
@@ -153,12 +160,10 @@
         <label for="input-accrualDate">Accrual Date</label>
         <input id="input-accrualDate" type="text" value="12/01/2025" data-bind="accrualDate" />
       </div>
-      
-      <p class="hint">Hint: Advanced Modification updates text directly. "Random Generate" calculates logical financial data.</p>
     </div>
 
     <div class="panel stub">
-      <div class="page">
+      <div id="capture-area" class="page">
         <div class="pay-stub">
           <div class="stub-top-title">SALARY WARRANT</div>
           <div class="stub-top-subtitle">CERTIFICATED</div>
@@ -307,7 +312,7 @@
   </div>
 
   <script>
-    // --- 1. Chức năng gốc: Binding (Giữ nguyên) ---
+    // --- 1. Chức năng gốc: Binding ---
     function setupBinding() {
       const inputs = document.querySelectorAll("input[data-bind]");
       inputs.forEach((input) => {
@@ -332,11 +337,10 @@
           });
         };
         input.addEventListener("input", updateTargets);
-        // Không gọi updateTargets ngay lúc đầu để giữ số liệu mẫu nếu chưa sửa
       });
     }
 
-    // --- 2. Các hàm tiện ích logic (Mới) ---
+    // --- 2. Tiện ích ---
     function formatMoney(num) {
       return num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
     }
@@ -355,10 +359,8 @@
     function getNumberToWords(amount) {
       const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
       const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
-      
       const dollars = Math.floor(amount);
       const cents = Math.round((amount - dollars) * 100);
-
       function convertGroup(n) {
         let str = '';
         if (n >= 100) { str += ones[Math.floor(n / 100)] + ' HUNDRED '; n %= 100; }
@@ -366,7 +368,6 @@
         if (n > 0) { str += ones[n] + ' '; }
         return str.trim();
       }
-
       let w = '';
       if (dollars >= 1000) {
         w += convertGroup(Math.floor(dollars / 1000)) + ' THOUSAND ';
@@ -375,7 +376,6 @@
         w += convertGroup(dollars);
       }
       if(w === '') w = 'ZERO';
-
       return w + ' AND ' + cents.toString().padStart(2,'0') + '/100 Dollars';
     }
 
@@ -392,106 +392,100 @@
       if (el) el.textContent = formatMoney(value);
     }
 
-    // --- 3. Logic Tính Lương Thông Minh (Kết nối vào nút Random cũ) ---
+    // --- 3. Logic Tính Lương Thông Minh (Smart Random) ---
     function runSmartRandom() {
-        // A. Random thông tin cơ bản
         const adviceNumber = (randomInt(1000000, 9999999)).toString();
         const last4 = randomInt(0, 9999).toString().padStart(4, "0");
-        
-        // Date Logic
         const now = new Date();
         const issueDate = new Date(now.getTime() - (randomInt(1, 30) * 86400000));
         const endDate = new Date(issueDate.getTime() - (randomInt(0, 5) * 86400000));
         
-        // Cập nhật input gốc
         triggerInputById("input-adviceNumber", adviceNumber);
         triggerInputById("input-employeeId", "XXX-XX-" + last4);
         triggerInputById("input-issueDate", formatDateMMDDYYYY(issueDate));
         triggerInputById("input-endDate", formatDateMMDDYYYY(endDate));
         triggerInputById("input-accrualDate", formatDateMMDDYYYY(issueDate));
 
-        // B. Tính toán tài chính (Logic mới)
-        // 1. Lương Gộp (Gross Pay) cho giáo viên: $4500 - $9000
         const grossPay = 4500 + Math.random() * 4500;
-        
-        // 2. Các chỉ số khấu trừ (Giả lập logic NJ)
         const rates = {
-            strs: 0.102, // 10.2% Pension
-            vsp: 14.34,  // Fixed Vision
-            kai: 145.00, // Fixed Health
-            fwt: 0.11 + (Math.random() * 0.04), // Federal Tax ~11-15%
-            swt: 0.04 + (Math.random() * 0.01), // State Tax ~4-5%
-            med: 0.0145, // Medicare 1.45%
-            cta: 116.50  // Union Dues
+            strs: 0.102, vsp: 14.34, kai: 145.00,
+            fwt: 0.11 + (Math.random() * 0.04), swt: 0.04 + (Math.random() * 0.01),
+            med: 0.0145, cta: 116.50
         };
-
         const strs = grossPay * rates.strs;
         const fwt = grossPay * rates.fwt;
         const swt = grossPay * rates.swt;
         const med = grossPay * rates.med;
         
-        // Tổng các khoản
-        const totalReductions = strs + rates.vsp + rates.kai; // Pre-tax
-        const totalDeductions = fwt + swt + med + rates.cta; // Taxes + After-tax
+        const totalReductions = strs + rates.vsp + rates.kai;
+        const totalDeductions = fwt + swt + med + rates.cta;
         const netPay = grossPay - totalReductions - totalDeductions;
         const taxable = grossPay - totalReductions;
-
-        // Giả lập YTD (Nhân 12 tháng)
         const m = 12; 
 
-        // C. Cập nhật Bảng (Update Table Cells)
-        // Earnings
-        updateCell("cell-gross-rate", grossPay);
-        updateCell("cell-gross-amt", grossPay);
-        
-        // Pre-tax Reductions
+        updateCell("cell-gross-rate", grossPay); updateCell("cell-gross-amt", grossPay);
         updateCell("cell-strs-curr", strs); updateCell("cell-strs-ytd", strs * m);
         updateCell("cell-vsp-curr", rates.vsp); updateCell("cell-vsp-ytd", rates.vsp * m);
         updateCell("cell-kai-curr", rates.kai); updateCell("cell-kai-ytd", rates.kai * m);
-        
-        // Employee Deductions
         updateCell("cell-fwt-curr", fwt); updateCell("cell-fwt-ytd", fwt * m);
         updateCell("cell-swt-curr", swt); updateCell("cell-swt-ytd", swt * m);
         updateCell("cell-med-curr", med); updateCell("cell-med-ytd", med * m);
         updateCell("cell-cta-curr", rates.cta); updateCell("cell-cta-ytd", rates.cta * m);
 
-        // Employer Contributions (Giả lập)
-        const erStrs = grossPay * 0.16; // Employer pays more
-        const erSui = grossPay * 0.005;
-        const erWc = grossPay * 0.022;
+        const erStrs = grossPay * 0.16; const erSui = grossPay * 0.005; const erWc = grossPay * 0.022;
         updateCell("cell-er-strs", erStrs); updateCell("cell-er-strs-ytd", erStrs * m);
         updateCell("cell-er-med", med); updateCell("cell-er-med-ytd", med * m);
         updateCell("cell-er-sui", erSui); updateCell("cell-er-sui-ytd", erSui * m);
         updateCell("cell-er-wc", erWc); updateCell("cell-er-wc-ytd", erWc * m);
-        // Giữ nguyên mấy cái fix
         updateCell("cell-er-life", 8.40); updateCell("cell-er-life-ytd", 100.80);
         updateCell("cell-er-kai", 805.00); updateCell("cell-er-kai-ytd", 9660.00);
         updateCell("cell-er-den", 65.17); updateCell("cell-er-den-ytd", 782.04);
 
-        // Taxable Balances
         updateCell("cell-tax-fed", taxable); updateCell("cell-tax-fed-ytd", taxable * m);
         updateCell("cell-tax-state", taxable); updateCell("cell-tax-state-ytd", taxable * m);
         updateCell("cell-tax-med", grossPay); updateCell("cell-tax-med-ytd", grossPay * m);
 
-        // Summary Box
         updateCell("cell-sum-gross", grossPay);
         updateCell("cell-sum-red", totalReductions);
-        updateCell("cell-sum-tax", fwt + swt + med); // Tax section in summary usually groups strict taxes
-        updateCell("cell-sum-ded", rates.cta); // Remaining deductions
+        updateCell("cell-sum-tax", fwt + swt + med);
+        updateCell("cell-sum-ded", rates.cta);
         updateCell("cell-sum-ytd", grossPay * m);
         
-        // D. Cập nhật Input Net Pay & Chữ (Quan trọng nhất)
         triggerInputById("input-netPay", formatMoney(netPay));
         triggerInputById("input-amountWords", getNumberToWords(netPay));
     }
 
+    // --- 4. Logic Download Ảnh (Chất lượng cao) ---
+    function downloadImage() {
+        const captureElement = document.getElementById('capture-area');
+        const nameVal = document.getElementById('input-employeeName').value || 'employee';
+        const dateVal = document.getElementById('input-issueDate').value || 'date';
+
+        // Xử lý tên file
+        const cleanName = nameVal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
+        const cleanDate = dateVal.replace(/\//g, '-');
+        const filename = `${cleanName}-${cleanDate}.png`;
+
+        // Dùng html2canvas chụp với scale cao
+        html2canvas(captureElement, {
+            scale: 4, // Tăng lên 4 để ảnh sắc nét (High Resolution)
+            useCORS: true,
+            backgroundColor: "#ffffff"
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       setupBinding();
-      
-      const btn = document.getElementById("btn-random");
-      if(btn) {
-        btn.addEventListener("click", runSmartRandom);
-      }
+      const btnRand = document.getElementById("btn-random");
+      if(btnRand) btnRand.addEventListener("click", runSmartRandom);
+
+      const btnDown = document.getElementById("btn-download");
+      if(btnDown) btnDown.addEventListener("click", downloadImage);
     });
   </script>
 </body>
